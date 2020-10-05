@@ -223,6 +223,8 @@ def build(bld):
         'model/rip-header.cc',
         'helper/rip-helper.cc',
         'model/tcp-cubic.cc',
+        'model/tcp-bbr.cc',
+        'model/tcp-bbr-state.cc',
         ]
 
     internet_test = bld.create_ns3_module_test_library('internet')
@@ -398,6 +400,8 @@ def build(bld):
         'model/rip-header.h',
         'helper/rip-helper.h',
         'model/tcp-cubic.h',
+        'model/tcp-bbr.h',
+        'model/tcp-bbr-state.h',
        ]
 
     if bld.env['NSC_ENABLED']:
