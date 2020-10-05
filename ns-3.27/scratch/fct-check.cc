@@ -39,7 +39,18 @@
 
 using namespace ns3;
 
+//#define TCP_PROTOCOL     "ns3::TcpBbr"
+#define TCP_PROTOCOL     "ns3::TcpCubic"
+//#define TCP_PROTOCOL     "ns3::TcpNewReno"
+
 NS_LOG_COMPONENT_DEFINE ("TCP_FCTScript");
+
+static void
+CwndChange (uint32_t oldCwnd, uint32_t newCwnd)
+{
+  std::cout << Simulator::Now ().GetSeconds () << "\t" << newCwnd;
+}
+
 
 int
 main (int argc, char *argv[])
@@ -51,7 +62,8 @@ main (int argc, char *argv[])
   bool tracing = true;
   uint32_t PacketSize = 1404;
   uint32_t TCPFlows = 1;
-  float simDuration = 20.0;
+  std::string file_name = "cubic";
+  float simDuration = 10.0;
 
 
   CommandLine cmd;
@@ -66,7 +78,9 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (PacketSize));
 
   //Change congestion control variant
-   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId()));
+   Config::SetDefault("ns3::TcpL4Protocol::SocketType", StringValue(TCP_PROTOCOL));
+   //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpBbr")));
+   //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpCubic::GetTypeId()));
    //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId()));
 
 
@@ -129,6 +143,9 @@ main (int argc, char *argv[])
       sinkApps.Add (sink.Install (r1n1.Get (1)));
     }
 
+  Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (n0r0.Get (0), TcpSocketFactory::GetTypeId ());
+  ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeCallback (&CwndChange));
+
   sinkApps.Start (Seconds (0.0));
   sinkApps.Stop (Seconds (simDuration));
   sourceApps.Start (Seconds (1));
@@ -137,8 +154,11 @@ main (int argc, char *argv[])
   if (tracing)
     {
       AsciiTraceHelper ascii;
-      p2p.EnableAsciiAll (ascii.CreateFileStream ("reno-fct.tr"));
-      p2p.EnablePcapAll ("reno-fct", false);
+      p2p.EnableAsciiAll (ascii.CreateFileStream (file_name + "-fct.tr"));
+      p2p.EnablePcapAll (file_name + "-fct", false);
+
+      /*Simulator::Schedule (Seconds (0.00001), &TraceCwnd, file_name + "-cwnd.data");
+      Simulator::Schedule (Seconds (0.00001), &TraceSsThresh, file_name + "-ssth.data");*/
     }
 
   FlowMonitorHelper flowmon;
