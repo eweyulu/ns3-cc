@@ -222,6 +222,7 @@ def build(bld):
         'model/rip.cc',
         'model/rip-header.cc',
         'helper/rip-helper.cc',
+        'model/tcp-cubic.cc',
         ]
 
     internet_test = bld.create_ns3_module_test_library('internet')
@@ -283,7 +284,7 @@ def build(bld):
         'test/tcp-endpoint-bug2211.cc',
         'test/tcp-datasentcb-test.cc',
         'test/ipv4-rip-test.cc',
-        
+        'test/tcp-cubic-test-suite.cc',
         ]
     privateheaders = bld(features='ns3privateheader')
     privateheaders.module = 'internet'
@@ -396,6 +397,7 @@ def build(bld):
         'model/rip.h',
         'model/rip-header.h',
         'helper/rip-helper.h',
+        'model/tcp-cubic.h',
        ]
 
     if bld.env['NSC_ENABLED']:
