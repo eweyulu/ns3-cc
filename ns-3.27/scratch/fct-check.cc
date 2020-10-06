@@ -40,8 +40,8 @@
 using namespace ns3;
 
 //#define TCP_PROTOCOL     "ns3::TcpBbr"
-#define TCP_PROTOCOL     "ns3::TcpCubic"
-//#define TCP_PROTOCOL     "ns3::TcpNewReno"
+//#define TCP_PROTOCOL     "ns3::TcpCubic"
+#define TCP_PROTOCOL     "ns3::TcpNewReno"
 
 NS_LOG_COMPONENT_DEFINE ("TCP_FCTScript");
 
@@ -62,7 +62,7 @@ main (int argc, char *argv[])
   bool tracing = true;
   uint32_t PacketSize = 1404;
   uint32_t TCPFlows = 1;
-  std::string file_name = "cubic";
+  std::string file_name = "newreno";
   float simDuration = 10.0;
 
 
