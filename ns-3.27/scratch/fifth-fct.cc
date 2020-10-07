@@ -166,7 +166,7 @@ MyApp::ScheduleTx (void)
 }
 
 bool newCwndFile = true;
-std::string file_name = "bbr-data";
+std::string file_name = "newreno-data";
 
 static void
 CwndChange (uint32_t oldCwnd, uint32_t newCwnd)
@@ -203,15 +203,16 @@ main (int argc, char *argv[])
   bool tracing = true;
   uint32_t PacketSize = 1404;
   uint32_t numPkts = 1;
+  uint32_t initcwnd = 10;
   float simDuration = 12.0;
 
   CommandLine cmd;
   cmd.AddValue ("numPkts", "Number of packets to transmit", numPkts);
   cmd.Parse (argc, argv);
 
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpBbr")));
+  //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpBbr")));
   //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpCubic")));
-  //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (PacketSize));
   
   NodeContainer nodes;
@@ -244,6 +245,7 @@ main (int argc, char *argv[])
 
   Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (nodes.Get (0), TcpSocketFactory::GetTypeId ());
   ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeCallback (&CwndChange));
+  ns3TcpSocket->SetAttribute("InitialCwnd", UintegerValue (initcwnd));
 
   Ptr<MyApp> app = CreateObject<MyApp> ();
   app->Setup (ns3TcpSocket, sinkAddress, PacketSize, numPkts, DataRate (rate));
