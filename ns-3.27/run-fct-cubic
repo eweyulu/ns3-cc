@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#toexec=scratch/fifth-fct
+
+#nbrPkts=( 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 40 60 80 100 )
+
+#for pkts in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 40 60 80 100
+#do
+#    echo "Number of packets: " $pkts
+#    outdir="outCubicx${pkts}"
+#	 echo $outdir
+#    	 mkdir $outdir
+#    ./waf --run "$toexec --numPkts=$pkts" &> $outdir/$pkts.out &
+#    echo "done waf"
+#    wait
+#    mv cubic-data* $outdir
+#done
+
+#sleep 1
+
+#pkill -9 -x fifth-fct
+
+for f in outCubicx*/cubic-data-fct-0-0.pcap;
+    do 
+        fct=$(tshark -r "$f" | awk '{print $2, $7, $12}' |  sed 's/\[//' | sed 's/\]//' | sed 's/,//' | sed '/FIN/,$d' | awk 'END {print $1}');
+        num=$(echo "$f" | cut -d'x' -f 2 | cut -d'x' -f 2 | cut -d'/' -f 1);
+        printf "$num  $fct \n" >> cubic-fct-results.tmp;
+done
+
+cat cubic-fct-results.tmp | sort -n -k1 > cubic-fct-results.txt
+rm cubic-fct-results.tmp

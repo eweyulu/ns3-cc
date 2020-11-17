@@ -166,7 +166,7 @@ MyApp::ScheduleTx (void)
 }
 
 bool newCwndFile = true;
-std::string file_name = "newreno-data";
+std::string file_name = "bbr-data";
 
 static void
 CwndChange (uint32_t oldCwnd, uint32_t newCwnd)
@@ -201,8 +201,9 @@ main (int argc, char *argv[])
   std::string delay = "10ms";
   std::string rate = "12Mbps";
   bool tracing = true;
-  uint32_t PacketSize = 1404;
-  uint32_t numPkts = 1;
+  bool sack = true;
+  uint32_t PacketSize = 536;
+  uint32_t numPkts = 2;
   uint32_t initcwnd = 10;
   float simDuration = 12.0;
 
@@ -210,10 +211,11 @@ main (int argc, char *argv[])
   cmd.AddValue ("numPkts", "Number of packets to transmit", numPkts);
   cmd.Parse (argc, argv);
 
-  //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpBbr")));
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpBbr")));
   //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpCubic")));
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
+  //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (PacketSize));
+  Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue (sack));
   
   NodeContainer nodes;
   nodes.Create (2);
