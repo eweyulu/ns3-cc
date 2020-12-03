@@ -198,11 +198,11 @@ int
 main (int argc, char *argv[])
 {
 
-  std::string delay = "10ms";
+  std::string delay = "100ms";
   std::string rate = "12Mbps";
   bool tracing = true;
   bool sack = true;
-  uint32_t PacketSize = 536;
+  uint32_t PacketSize = 1460;
   uint32_t numPkts = 2;
   uint32_t initcwnd = 10;
   float simDuration = 12.0;
