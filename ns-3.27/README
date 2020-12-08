@@ -49,9 +49,9 @@ included in the file doc/build.txt
 
 However, the real quick and dirty way to get started is to
 type the command
-  ./waf configure --enable-examples
+  ./waf configure --enable-examples --enable-tests
 followed by
-  ./waf 
+  ./waf build
 in the directory which contains
 this README file. The files built will be copied in the
 build/ directory.
