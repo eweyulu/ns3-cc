@@ -31,7 +31,7 @@ using namespace std;
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("FifthScriptExample");
+NS_LOG_COMPONENT_DEFINE ("CwndCheck");
 
 // ===========================================================================
 //
@@ -45,7 +45,7 @@ NS_LOG_COMPONENT_DEFINE ("FifthScriptExample");
 //   +----------------+    +----------------+
 //           |                     |
 //           +---------------------+
-//                5 Mbps, 2 ms
+//                12 Mbps, 10 ms
 //
 //
 // We want to look at changes in the ns-3 TCP congestion window.  We need
@@ -67,146 +67,19 @@ NS_LOG_COMPONENT_DEFINE ("FifthScriptExample");
 // install in the source node.
 // ===========================================================================
 //
-class MyApp : public Application 
-{
-public:
 
-  MyApp ();
-  virtual ~MyApp();
-
-  void Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t nPackets, DataRate dataRate);
-
-private:
-  virtual void StartApplication (void);
-  virtual void StopApplication (void);
-
-  void ScheduleTx (void);
-  void SendPacket (void);
-
-  Ptr<Socket>     m_socket;
-  Address         m_peer;
-  uint32_t        m_packetSize;
-  uint32_t        m_nPackets;
-  DataRate        m_dataRate;
-  EventId         m_sendEvent;
-  bool            m_running;
-  uint32_t        m_packetsSent;
-};
-
-MyApp::MyApp ()
-  : m_socket (0), 
-    m_peer (), 
-    m_packetSize (0),
-    m_nPackets (0), 
-    m_dataRate (0), 
-    m_sendEvent (), 
-    m_running (false), 
-    m_packetsSent (0)
-{
-}
-
-MyApp::~MyApp()
-{
-  m_socket = 0;
-}
-
-void
-MyApp::Setup (Ptr<Socket> socket, Address address, uint32_t packetSize, uint32_t nPackets, DataRate dataRate)
-{
-  m_socket = socket;
-  m_peer = address;
-  m_packetSize = packetSize;
-  m_nPackets = nPackets;
-  m_dataRate = dataRate;
-}
-
-void
-MyApp::StartApplication (void)
-{
-  m_running = true;
-  m_packetsSent = 0;
-  m_socket->Bind ();
-  m_socket->Connect (m_peer);
-  SendPacket ();
-}
-
-void 
-MyApp::StopApplication (void)
-{
-  m_running = false;
-
-  if (m_sendEvent.IsRunning ())
-    {
-      Simulator::Cancel (m_sendEvent);
-    }
-
-  if (m_socket)
-    {
-      m_socket->Close ();
-    }
-}
-
-void 
-MyApp::SendPacket (void)
-{
-  Ptr<Packet> packet = Create<Packet> (m_packetSize);
-  m_socket->Send (packet);
-
-  if (++m_packetsSent < m_nPackets)
-    {
-      ScheduleTx ();
-      //NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << "\t pkts sent: " << m_packetsSent << "\t" << "pkts left: " << "\t" << m_nPackets-m_packetsSent);
-      NS_LOG_INFO (Simulator::Now ().GetSeconds () << "Packet size: "<< packet->GetSize ()<< "\t pkts sent: " << m_packetsSent << "\t" << "pkts left: " << "\t" << m_nPackets-m_packetsSent);
-    }
-  /*if (m_packetsSent == m_nPackets)
-  {
-      m_socket->Close ();
-  }*/
-}
-
-void 
-MyApp::ScheduleTx (void)
-{
-  if (m_running)
-    {
-      Time tNext (Seconds (m_packetSize * 8 / static_cast<double> (m_dataRate.GetBitRate ())));
-      m_sendEvent = Simulator::Schedule (tNext, &MyApp::SendPacket, this);
-    }
-}
-
-bool newCwndFile = true;
-std::string file_name = "newreno-data";
-
-static void
-CwndChange (uint32_t oldCwnd, uint32_t newCwnd)
-{
-  NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << "\t" << newCwnd);
-
-  // Write to a file
-  ofstream myfile;
-  if (newCwndFile)
-    {
-      myfile.open (file_name+ "-cwnd.log");
-      newCwndFile = false;
-    }
-  else
-    {
-       myfile.open (file_name+ "-cwnd.log", ios::out | ios::app);
-    }
-     myfile << Simulator::Now ().GetSeconds () << " " << newCwnd << "\n";
-     myfile.close();
-}
 
 int 
 main (int argc, char *argv[])
 {
 
-  std::string delay = "20ms";
+  std::string delay = "10ms";
   std::string rate = "12Mbps";
+  std::string file_name = "newreno-data";
   bool tracing = true;
-  //bool sack = true;
+  bool sack = true;
   uint32_t PacketSize = 1440;
-  uint32_t numPkts = 200;
+  uint32_t numPkts = 10000;
   uint32_t initcwnd = 10;
   float simDuration = 12.0;
 
@@ -219,7 +92,8 @@ main (int argc, char *argv[])
   //Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TypeId::LookupByName ("ns3::TcpNewReno")));
   Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (PacketSize));
   //Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
-  //Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue (sack));
+  Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue (sack));
+  Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue (initcwnd));
 
   NodeContainer nodes;
   nodes.Create (2);
@@ -242,22 +116,27 @@ main (int argc, char *argv[])
   address.SetBase ("10.1.1.0", "255.255.255.252");
   Ipv4InterfaceContainer interfaces = address.Assign (devices);
 
-  uint16_t sinkPort = 8080;
-  Address sinkAddress (InetSocketAddress (interfaces.GetAddress (1), sinkPort));
-  PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
-  ApplicationContainer sinkApps = packetSinkHelper.Install (nodes.Get (1));
-  sinkApps.Start (Seconds (0.1));
-  sinkApps.Stop (Seconds (simDuration));
+  NS_LOG_INFO ("Create Applications.");
 
-  Ptr<Socket> ns3TcpSocket = Socket::CreateSocket (nodes.Get (0), TcpSocketFactory::GetTypeId ());
-  ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeCallback (&CwndChange));
-  ns3TcpSocket->SetAttribute("InitialCwnd", UintegerValue (initcwnd));
+  //Create app at node 0 to send to node 1
 
-  Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, PacketSize, numPkts, DataRate (rate));
-  nodes.Get (0)->AddApplication (app);
-  app->SetStartTime (Seconds (0.1));
-  app->SetStopTime (Seconds (simDuration));
+  uint16_t port = 8000;
+  BulkSendHelper source("ns3::TcpSocketFactory",
+                        InetSocketAddress(interfaces.GetAddress(1), port));
+
+  // Set the amount of data to send in bytes (0 for unlimited).
+  source.SetAttribute("MaxBytes", UintegerValue(PacketSize*numPkts));
+  source.SetAttribute("SendSize", UintegerValue(PacketSize));
+  ApplicationContainer apps = source.Install(nodes.Get(0));
+  apps.Start(Seconds (0.1));
+  apps.Stop(Seconds(simDuration));
+
+  // Sink for long flow at node 1
+  PacketSinkHelper sink("ns3::TcpSocketFactory",
+                        InetSocketAddress(Ipv4Address::GetAny(), port));
+  apps = sink.Install(nodes.Get(1));
+  apps.Start(Seconds(0.1));
+  apps.Stop(Seconds(simDuration));
 
   if (tracing)
     {

@@ -3009,7 +3009,7 @@ TcpSocketBase::SendPendingData (bool withAck)
                         " pd->Size " << m_txBuffer->Size () <<
                         " pd->SFS " << m_txBuffer->SizeFromSequence (m_tcb->m_nextTxSequence));
 
-          NS_LOG_DEBUG ("cWnd: " << m_tcb->m_cWnd <<
+          NS_LOG_DEBUG (Simulator::Now ().GetSeconds () << "\t cWnd: " << m_tcb->m_cWnd <<
                         " total unAck: " << UnAckDataCount () <<
                         " sent seq " << m_tcb->m_nextTxSequence <<
                         " size " << sz);
